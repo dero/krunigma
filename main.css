@@ -1,0 +1,64 @@
+#scene {
+	width: 260mm;
+	height: 297mm;
+	margin: 0 auto;
+	border: 1mm solid black;
+
+	background-repeat: no-repeat;
+	background-size: contain;
+	background-image: url('images/base.jpg');
+
+	position: relative;
+}
+
+#discs {
+	width: 156mm;
+	height: 156mm;
+	display: grid;
+	place-items: center;
+
+	position: absolute;
+	top: 45.5mm;
+	left: 26.5mm;
+}
+
+#discs > * {
+	grid-column: 1;
+	grid-row: 1;
+}
+
+#controls {
+	width: 40mm;
+	height: 180mm;
+	position: absolute;
+	right: 0;
+	top: 20mm;
+}
+
+#outer {
+	width: 156mm;
+	height: 156mm;
+}
+
+#middle {
+	width: 131mm;
+	height: 131mm;
+}
+
+#inner {
+	width: 105mm;
+	height: 105mm;
+}
+
+#deflector {
+	width: 80mm;
+	height: 80mm;
+}
+
+input[type=range][orient=vertical]
+{
+    -webkit-appearance: slider-vertical; /* WebKit */
+    width: 4mm;
+    height: 180mm;
+    padding: 0 5px;
+}

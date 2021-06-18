@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+
+<script src='https://unpkg.com/panzoom@9.4.0/dist/panzoom.min.js'></script>
+<script src='main.js'></script>
+<link rel="stylesheet" href="main.css" />
+
+<div id="scene">
+	<div id="discs">
+		<img src="images/outer.png" id="outer" />
+		<img src="images/middle.png" id="middle" />
+		<img src="images/inner.png" id="inner" />
+		<img src="images/deflector.png" id="deflector" />
+	</div>
+
+	<div id="controls" class="panzoom-exclude">
+		<input data-controls="outer" type="range" orient="vertical" min="0" max="359" value="0" />
+		<input data-controls="middle" type="range" orient="vertical" min="0" max="359" value="0" />
+		<input data-controls="inner" type="range" orient="vertical" min="0" max="359" value="0" />
+		<input data-controls="deflector" type="range" orient="vertical" min="0" max="359" value="0" />
+	</div>
+</div>
+
+<script>
+	App.init();
+</script>

@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<label>
+	Heslo (4 písmena)
+	<input type="text" maxlength="4" id="password" value="TEST" />
+</label>
+
+<label>
+	Zakódovaný text
+	<input type="text" id="encoded" value="BYPASCDXXMPTBUZIRH" />
+</label>
+
+<button>Dekóduj</button>
+
+<h4>Dekódovaný text:</h4>
+<div id="decoded"></div>
+
+<div id="settings">
+	<h4>Transpozice vstupu</h4>
+	<label>
+		Z: <input type="text" id="tin_from" value="ABCDEFGHIJKLMNOPQRSTUVWXYZ">
+	</label>
+	<label>
+		Do: <input type="text" id="tin_to" value="ABCDEFGHIJKLMNOPQRSTUVWXYZ">
+	</label>
+
+	<h4>Transpozice výstupu</h4>
+	<label>
+		Z: <input type="text" id="tout_from" value="ABCDEFGHIJKLMNOPQRSTUVWXYZ">
+	</label>
+	<label>
+		Do: <input type="text" id="tout_to" value="ABCDEFGHIJKLMNOPQRSTUVWXYZ">
+	</label>
+</div>
+
+<style>
+	body {
+		font-size: 1.2rem;
+		font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+	}
+	label {
+		margin-bottom: 1rem;
+	}
+	label, input {
+		display: block;
+	}
+	input {
+		padding: 0.5rem;
+		margin-top: 0.3rem;
+		width: 100%;
+		box-sizing: border-box;
+	}
+	button {
+		padding: 1rem;
+	}
+</style>
+
+<script>
+/**
+ * Ring transpositions.
+ */
+const rings = [
+	[ -1, 2, -1, -1, 0, 1, 1, -2, 2, -1, 1, -2, 0, 2, -1, -1, 1, -1, 2, -1, -1, 0, 2, -1, 2, -2 ],
+	[ -2, -1, 1, -1, 2, -1, 6, -2, 0, -2, 1, -2, -2, 2, -1, -1, 2, 0, -2, 3, -1, -1, -1, 0, 1, 2 ],
+	[ -2, 1, -2, 0, 1, 2, -2, -1, 2, 2, 2, -3, -3, 2, 0, -2, 2, -1, 1, -2, 0, 2, 3, -2, -2, 2 ],
+	[ 2, 4, -2, 16, 20, -4, 10, 7, 2, 9, -2, 6, 1, -1, -7, 6, -10, -6, -9, 10, 0, -6, 1, -1, 6, 0 ],
+]
+
+const reverseRings = [
+	[ 2, -2, -1, 0, 2, -1, 1, -2, 3, 3, -2, -2, -2, 2, 0, -2, 1, 2, -2, -1, 0, 2, 2, -2, 2, -3 ],
+	[ 1, -2, 1, -1, 1, 2, -2, 2, 0, 2, 2, -1, -6, 1, 1, -2, 2, 0, -2, 1, 1, 1, -3, 0, 2, -1 ],
+	[ -2, 1, 1, -2, 0, 2, -1, -1, 1, 2, -2, -1, 0, 1, 1, -2, 1, -1, 1, 1, -2, 0, 1, 2, -2, 1 ],
+]
+
+/**
+ * Functions.
+ */
+const getRingOffsets = password => {
+	return [
+		password.charCodeAt(0) - 'C'.charCodeAt(0), // 'C' is the default orientation
+		password.charCodeAt(1) - 'C'.charCodeAt(0),
+		password.charCodeAt(2) - 'C'.charCodeAt(0),
+		password.charCodeAt(3) - 'C'.charCodeAt(0),
+	]
+}
+
+/**
+ * Rotate the rings according to enigma rules.
+ */
+const step = ringOffsets => ringOffsets.map( ( value, i ) => value - i - 1 )
+
+/**
+ * Transpose.
+ */
+const transpose = (letter, from, to) => to.charAt(from.indexOf(letter))
+
+/**
+ * Makes sure the index number is from interval <0, 25>.
+ */
+const normalizeIndex = index => {
+	while ( index < 0 ) index += 26
+	return index % 26
+}
+
+/**
+ * Decode one letter according to the current configuration.
+ */
+const decodeLetter = ( letter, ringOffsets ) => {
+	let position = letter.charCodeAt(0)	- 65
+	const reverseOffsets = [ ringOffsets[2], ringOffsets[1], ringOffsets[0] ]
+
+	// Steps inwards
+	ringOffsets.forEach(
+		( offset, index ) => position += rings[ index ][ normalizeIndex( position + offset ) ]
+	)
+
+	// Steps outwards
+	reverseOffsets.forEach(
+		( offset, index ) => position += reverseRings[ index ][ normalizeIndex( position + offset ) ]
+	)
+
+	const resultingLetter = position < 0 ? position + 26 : position % 26
+	return String.fromCharCode( 65 + resultingLetter )
+}
+
+/**
+ * Elements.
+ */
+const button = document.querySelector('button')
+const passwordEl = document.querySelector('#password')
+const encodedEl = document.querySelector('#encoded')
+const decodedEl = document.querySelector('#decoded')
+const transposeInputFromEl = document.querySelector('#tin_from')
+const transposeInputToEl = document.querySelector('#tin_to')
+const transposeOutputFromEl = document.querySelector('#tout_from')
+const transposeOutputToEl = document.querySelector('#tout_to')
+
+
+button.addEventListener('click', () => {
+	const password  = passwordEl.value.toUpperCase()
+	const encoded   = encodedEl.value.toUpperCase()
+	const tin_from  = transposeInputFromEl.value.toUpperCase()
+	const tin_to    = transposeInputToEl.value.toUpperCase()
+	const tout_from = transposeOutputFromEl.value.toUpperCase()
+	const tout_to   = transposeOutputToEl.value.toUpperCase()
+
+	if ( password.length !== 4 ) return
+
+	let ringOffsets = getRingOffsets( password )
+
+	const decoded = encoded.split('').map( letter => {
+		const transposedLetter = transpose( letter, tin_from, tin_to )
+		console.log( transposedLetter )
+		const decoded = decodeLetter( transposedLetter, ringOffsets )
+		ringOffsets = step( ringOffsets )
+
+		return transpose(decoded, tout_from, tout_to)
+	} )
+
+	decodedEl.innerHTML = decoded.join('')
+})
+</script>
