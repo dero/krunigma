@@ -32,6 +32,29 @@
 	<label>
 		Do: <input type="text" id="tout_to" value="ABCDEFGHIJKLMNOPQRSTUVWXYZ">
 	</label>
+
+	<h4>Nastavení kruhů</h4>
+	<label>
+		Vnější (směr dovnitř): <input type="text" id="router_inwards" value="-1, 2, -1, -1, 0, 1, 1, -2, 2, -1, 1, -2, 0, 2, -1, -1, 1, -1, 2, -1, -1, 0, 2, -1, 2, -2">
+	</label>
+	<label>
+		Střední (směr dovnitř): <input type="text" id="rmiddle_inwards" value="-2, -1, 1, -1, 2, -1, 6, -2, 0, -2, 1, -2, -2, 2, -1, -1, 2, 0, -2, 3, -1, -1, -1, 0, 1, 2">
+	</label>
+	<label>
+		Vnitřní (směr dovnitř): <input type="text" id="rinner_inwards" value="-2, 1, -2, 0, 1, 2, -2, -1, 2, 2, 2, -3, -3, 2, 0, -2, 2, -1, 1, -2, 0, 2, 3, -2, -2, 2">
+	</label>
+	<label>
+		Deflektor: <input type="text" id="deflector" value="2, 4, -2, 16, 20, -4, 10, 7, 2, 9, -2, 6, 1, -1, -7, 6, -10, -6, -9, 10, 0, -6, 1, -1, 6, 0">
+	</label>
+	<label>
+		Vnitřní (směr ven): <input type="text" id="rinner_outwards" value="2, -2, -1, 0, 2, -1, 1, -2, 3, 3, -2, -2, -2, 2, 0, -2, 1, 2, -2, -1, 0, 2, 2, -2, 2, -3">
+	</label>
+	<label>
+		Střední (směr ven): <input type="text" id="rmiddle_outwards" value="1, -2, 1, -1, 1, 2, -2, 2, 0, 2, 2, -1, -6, 1, 1, -2, 2, 0, -2, 1, 1, 1, -3, 0, 2, -1">
+	</label>
+	<label>
+		Vnější (směr ven): <input type="text" id="router_outwards" value="-2, 1, 1, -2, 0, 2, -1, -1, 1, 2, -2, -1, 0, 1, 1, -2, 1, -1, 1, 1, -2, 0, 1, 2, -2, 1">
+	</label>
 </div>
 
 <style>
@@ -60,18 +83,11 @@
 /**
  * Ring transpositions.
  */
-const rings = [
-	[ -1, 2, -1, -1, 0, 1, 1, -2, 2, -1, 1, -2, 0, 2, -1, -1, 1, -1, 2, -1, -1, 0, 2, -1, 2, -2 ],
-	[ -2, -1, 1, -1, 2, -1, 6, -2, 0, -2, 1, -2, -2, 2, -1, -1, 2, 0, -2, 3, -1, -1, -1, 0, 1, 2 ],
-	[ -2, 1, -2, 0, 1, 2, -2, -1, 2, 2, 2, -3, -3, 2, 0, -2, 2, -1, 1, -2, 0, 2, 3, -2, -2, 2 ],
-	[ 2, 4, -2, 16, 20, -4, 10, 7, 2, 9, -2, 6, 1, -1, -7, 6, -10, -6, -9, 10, 0, -6, 1, -1, 6, 0 ],
-]
+const ringsInputMap = [ 'router_inwards', 'rmiddle_inwards', 'rinner_inwards', 'deflector' ]
+const reverseRingsInputMap = [ 'rinner_outwards', 'rmiddle_outwards', 'router_outwards' ]
 
-const reverseRings = [
-	[ 2, -2, -1, 0, 2, -1, 1, -2, 3, 3, -2, -2, -2, 2, 0, -2, 1, 2, -2, -1, 0, 2, 2, -2, 2, -3 ],
-	[ 1, -2, 1, -1, 1, 2, -2, 2, 0, 2, 2, -1, -6, 1, 1, -2, 2, 0, -2, 1, 1, 1, -3, 0, 2, -1 ],
-	[ -2, 1, 1, -2, 0, 2, -1, -1, 1, 2, -2, -1, 0, 1, 1, -2, 1, -1, 1, 1, -2, 0, 1, 2, -2, 1 ],
-]
+let rings = []
+let reverseRings = []
 
 /**
  * Functions.
@@ -145,13 +161,35 @@ button.addEventListener('click', () => {
 	const tout_from = transposeOutputFromEl.value.toUpperCase()
 	const tout_to   = transposeOutputToEl.value.toUpperCase()
 
+	rings = []
+	reverseRings = []
+
+	ringsInputMap.forEach( id => {
+		const inputEl = document.getElementById( id )
+		const inputData = inputEl.value
+		const ringOffsets = inputData.split( ',' ).map( numberString => Number.parseInt( numberString ) )
+
+		if ( ringOffsets.length !== 26 ) alert( `Ring ${id} definition doesn't have 26 items.` )
+
+		rings.push( ringOffsets )
+	} )
+
+	reverseRingsInputMap.forEach( id => {
+		const inputEl = document.getElementById( id )
+		const inputData = inputEl.value
+		const ringOffsets = inputData.split( ',' ).map( numberString => Number.parseInt( numberString ) )
+
+		if ( ringOffsets.length !== 26 ) alert( `Ring ${id} definition doesn't have 26 items.` )
+
+		reverseRings.push( ringOffsets )
+	} )
+
 	if ( password.length !== 4 ) return
 
 	let ringOffsets = getRingOffsets( password )
 
 	const decoded = encoded.split('').map( letter => {
 		const transposedLetter = transpose( letter, tin_from, tin_to )
-		console.log( transposedLetter )
 		const decoded = decodeLetter( transposedLetter, ringOffsets )
 		ringOffsets = step( ringOffsets )
 
